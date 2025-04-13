@@ -1,0 +1,65 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: "VOICEVOX Core release tag (e.g., 0.16.0)"
+        required: true
+        type: string
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup(act)
+        if: ${{ env.ACT }}
+        uses: ./.github/actions/setup-gh
+
+      - name: Get XCFramework asset info
+        id: get_asset_info
+        run: |
+          asset_info=$(gh release view ${{ github.event.inputs.release-tag }} --repo VOICEVOX/voicevox_core --json assets | jq '.assets[] | select(.name | contains("xcframework"))')
+          asset_url=$(echo "$asset_info" | jq -r '.url')
+          asset_name=$(echo "$asset_info" | jq -r '.name')
+          echo "asset_url=$asset_url" >> $GITHUB_OUTPUT
+          echo "asset_name=$asset_name" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download XCFramework
+        id: download_asset
+        run: |
+          gh release download ${{ github.event.inputs.release-tag }} --repo VOICEVOX/voicevox_core --pattern "${{ steps.get_asset_info.outputs.asset_name }}"
+          echo "downloaded_file=${{ steps.get_asset_info.outputs.asset_name }}" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calculate SHA256 checksum
+        id: calculate_checksum
+        run: |
+          checksum=$(sha256sum ${{ steps.download_asset.outputs.downloaded_file }} | awk '{ print $1 }')
+          echo "checksum=$checksum" >> $GITHUB_OUTPUT
+
+      - name: Update Package.swift
+        run: |
+          # Use a temporary file for sed compatibility on different platforms
+          tmp_file=$(mktemp)
+          # Escape slashes in the URL for sed
+          escaped_url=$(echo "${{ steps.get_asset_info.outputs.asset_url }}" | sed 's/\//\\\//g')
+
+          cp Package.swift.template Package.swift
+
+          # Replace URL placeholder
+          sed "s/BINARY_URL/${escaped_url}/" Package.swift > "$tmp_file" && mv "$tmp_file" Package.swift
+
+          # Replace Checksum placeholder
+          sed "s/CHECKSUM_VALUE/${{ steps.calculate_checksum.outputs.checksum }}/" Package.swift > "$tmp_file" && mv "$tmp_file" Package.swift
+
+          echo "Package.swift updated:"
+          cat Package.swift
+
+          # TODO: commit and push changes, create a pull request
