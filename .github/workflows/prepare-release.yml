@@ -8,6 +8,10 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   prepare-release:
     runs-on: ubuntu-latest
@@ -62,4 +66,24 @@ jobs:
           echo "Package.swift updated:"
           cat Package.swift
 
-          # TODO: commit and push changes, create a pull request
+      - name: Commit and Push Changes
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git checkout -b update-package-${{ github.event.inputs.release-tag }}
+          git add Package.swift
+          git commit -m "Update VoicevoxCoreBinary to ${{ github.event.inputs.release-tag }}"
+          git push origin update-package-${{ github.event.inputs.release-tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request
+        run: |
+          gh pr create \
+            --title "Update VoicevoxCoreBinary to ${{ github.event.inputs.release-tag }}" \
+            --body "This PR updates the VoicevoxCoreBinary dependency to version ${{ github.event.inputs.release-tag }}.\n\n**Changes:**\n- Updated binary URL in \`Package.swift\`.\n- Updated checksum in \`Package.swift\`." \
+            --head update-package-${{ github.event.inputs.release-tag }} \
+            --base main \
+            --label "automated pr,dependency update"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
