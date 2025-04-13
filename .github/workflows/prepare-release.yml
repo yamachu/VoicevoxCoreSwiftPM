@@ -81,7 +81,14 @@ jobs:
         run: |
           gh pr create \
             --title "Update VoicevoxCoreBinary to ${{ github.event.inputs.release-tag }}" \
-            --body "This PR updates the VoicevoxCoreBinary dependency to version ${{ github.event.inputs.release-tag }}.\n\n**Changes:**\n- Updated binary URL in \`Package.swift\`.\n- Updated checksum in \`Package.swift\`." \
+            --body "$(cat <<EOF
+          This PR updates the VoicevoxCoreBinary dependency to version ${{ github.event.inputs.release-tag }}.
+
+          **Changes:**
+          - Updated binary URL in \`Package.swift\`.
+          - Updated checksum in \`Package.swift\`.
+          EOF
+          )" \
             --head update-package-${{ github.event.inputs.release-tag }} \
             --base main \
             --label "automated pr,dependency update"
