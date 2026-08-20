@@ -17,8 +17,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "VoicevoxCoreBinary",
-            url: "https://github.com/VOICEVOX/voicevox_core/releases/download/0.16.4/voicevox_core-ios-xcframework-cpu-0.16.4.zip",
-            checksum: "8d7bea9007ad3819591f2318a626a1a1e1278332d6a34ff114cf77b0a1d3ae82"
+            url: "https://github.com/VOICEVOX/voicevox_core/releases/download/0.17.0/voicevox_core-xcframework-0.17.0.zip",
+            checksum: "e634b0fd7e09924a4c9c4f6e8b5c0da0790a7649d89f289cbcad1b97976212be"
         ),
         // NOTE: voicevox_core は、link と load の 2パターンが存在する
         // そのため、ONNX Runtime を xcframework で提供すると、load の場合に特別な対応が必要となり体験を損ねるため、voicevox_core のみを提供する
