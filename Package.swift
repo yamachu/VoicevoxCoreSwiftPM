@@ -7,7 +7,7 @@ let package = Package(
     name: "VoicevoxCore",
     platforms: [
         .iOS(.v16),
-        // .macOS(.v13), // NOTE: https://github.com/VOICEVOX/voicevox_core/pull/1056 がリリースされたら外す
+        .macOS(.v13),
     ],
     products: [
         .library(
